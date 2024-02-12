@@ -1,50 +1,43 @@
-#!/usr/bin/python3
-"""
-Module for FileStorage class
-"""
-
 import json
-from models.base_model import BaseModel
-from datetime import datetime
-
 
 class FileStorage:
-    """
-    Serializes instances to a JSON file and deserializes JSON file to instances
-    """
-    __file_path = "file.json"
-    __objects = {}
+    """Serializes instances to JSON format and deserializes JSON to instances."""
+
+    def __init__(self):
+        """Initialize an empty dictionary to store serialized objects."""
+        self.__objects = {}
 
     def all(self):
-        """Returns the dictionary __objects"""
+        """Return the dictionary __objects."""
         return self.__objects
 
     def new(self, obj):
-        """Sets in __objects the obj with key <obj class name>.id"""
+        """Set the value of __objects with key <obj class name>.id."""
         key = "{}.{}".format(obj.__class__.__name__, obj.id)
         self.__objects[key] = obj
 
     def save(self):
-        """Serializes __objects to the JSON file (path: __file_path)"""
-        new_dict = {}
-        for key, value in self.__objects.items():
-            new_dict[key] = value.to_dict()
-        with open(self.__file_path, 'w', encoding='utf-8') as f:
-            json.dump(new_dict, f)
+        """Serialize __objects to JSON and save to file."""
+        filename = "file.json"
+        with open(filename, "w") as file:
+            obj_dict = {k: v.to_dict() for k, v in self.__objects.items()}
+            json.dump(obj_dict, file)
 
     def reload(self):
-        """Deserializes the JSON file to __objects"""
+        """Deserialize JSON from file to __objects."""
+        filename = "file.json"
         try:
-            with open(self.__file_path, 'r', encoding='utf-8') as f:
-                loaded_dict = json.load(f)
-                for key, value in loaded_dict.items():
-                    cls_name, obj_id = key.split('.')
-                    obj_dict = value
-                    for k, v in obj_dict.items():
-                        if k in ['created_at', 'updated_at']:
-                            obj_dict[k] = datetime.strptime(v, '%Y-%m-%dT%H:%M:%S.%f')
-                    new_obj = eval(cls_name)(**obj_dict)
-                    self.__objects[key] = new_obj
+            with open(filename, "r") as file:
+                obj_dict = json.load(file)
+                for key, value in obj_dict.items():
+                    class_name, obj_id = key.split(".")
+                    module = __import__("models." + class_name, fromlist=[class_name])
+                    class_ = getattr(module, class_name)
+                    obj_instance = class_(**value)
+                    self.__objects[key] = obj_instance
         except FileNotFoundError:
             pass
+
+# Create an instance of FileStorage to be used as a storage object
+storage = FileStorage()
 
