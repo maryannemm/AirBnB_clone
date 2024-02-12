@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""This module defines a command interpreter."""
+"""Command Interpreter Module"""
 import cmd
 import sys
 from models import storage
@@ -92,10 +92,13 @@ class HBNBCommand(cmd.Cmd):
         """Retrieves the number of instances of a class."""
         count = 0
         objs = storage.all()
-        for key, obj in objs.items():
-            if type(obj).__name__ == arg:
-                count += 1
-        print(count)
+        if arg in HBNBCommand.class_dict:
+            for obj in storage.all().values():
+                if isinstance(obj, HBNBCommand.class_dict[arg]):
+                    count += 1
+            print(count)
+        else:
+            print("** class doesn't exist **")
 
     def do_update(self, arg):
         """Updates an instance based on the class name and id."""
