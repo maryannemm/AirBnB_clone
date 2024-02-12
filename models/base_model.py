@@ -1,47 +1,31 @@
-import uuid
-from datetime import datetime
-
+from models import storage
 
 class BaseModel:
-    """Defines the BaseModel class."""
-
-    def __init__(self):
-        """Initialize BaseModel attributes."""
-        self.id = str(uuid.uuid4())  # Generate unique id
-        self.created_at = datetime.now()  # Set creation datetime
-        self.updated_at = datetime.now()  # Set update datetime
-
-    def __str__(self):
-        """Return string representation of the BaseModel instance."""
-        return "[{}] ({}) {}".format(
-            type(self).__name__, self.id, self.__dict__)
+    def __init__(self, *args, **kwargs):
+        if kwargs:
+            for key, value in kwargs.items():
+                if key != "__class__":
+                    setattr(self, key, value)
+                if "id" not in kwargs:
+                    setattr(self, "id", str(uuid4()))
+                if "created_at" not in kwargs:
+                    setattr(self, "created_at", datetime.now())
+                if "updated_at" not in kwargs:
+                    setattr(self, "updated_at", datetime.now())
+        else:
+            self.id = str(uuid4())
+            self.created_at = datetime.now()
+            self.updated_at = datetime.now()
+            storage.new(self)
 
     def save(self):
-        """Update the updated_at attribute with the current datetime."""
         self.updated_at = datetime.now()
+        storage.save()
 
     def to_dict(self):
-        """Return a dictionary representation of the BaseModel instance."""
-        obj_dict = self.__dict__.copy()  # Get instance attributes
-        obj_dict['__class__'] = type(self).__name__  # Add class name
-        obj_dict['created_at'] = self.created_at.isoformat()  # ISO format
-        obj_dict['updated_at'] = self.updated_at.isoformat()  # ISO format
-        return obj_dict
-
-
-if __name__ == "__main__":
-    my_model = BaseModel()
-    my_model.name = "My First Model"
-    my_model.my_number = 89
-    print(my_model)
-
-    my_model.save()
-    print(my_model)
-
-    my_model_json = my_model.to_dict()
-    print(my_model_json)
-
-    print("JSON of my_model:")
-    for key, value in my_model_json.items():
-        print("\t{}: ({}) - {}".format(key, type(value), value))
+        new_dict = self.__dict__.copy()
+        new_dict["__class__"] = self.__class__.__name__
+        new_dict["created_at"] = self.created_at.isoformat()
+        new_dict["updated_at"] = self.updated_at.isoformat()
+        return new_dict
 
